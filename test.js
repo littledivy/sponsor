@@ -319,7 +319,7 @@ async function handleFile(request, path) {
 }
 
 export async function run(options) {
-  if (!options.browser) {
+  if (!options.browser && !options.driver) {
     // TODO(caspervonb): pass-through
     return;
   }
@@ -434,7 +434,8 @@ export async function run(options) {
   }
 
   server.close();
-  browser.close();
+  // Dispose browser
+  await browser();
 }
 
 export default async function main(argv) {
@@ -443,9 +444,10 @@ export default async function main(argv) {
   }
 
   // TODO(caspervonb): support shuffle.
-  const {
+  let {
     browser,
     headless,
+    driver,
     filter,
     _: inputs,
   } = parse(argv, {
@@ -458,10 +460,14 @@ export default async function main(argv) {
   });
 
   // TODO(caspervonb): support fallthrough to `deno test`.
-  if (!["chrome", "firefox"].includes(browser)) {
+  if (!["chrome", "firefox"].includes(browser) && !driver) {
     throw new Error(
       `Invalid browser value ${browser}, valid options are 'chrome' and 'firefox'`,
     );
+  }
+
+  if(driver) {
+    driver = resolve(driver);
   }
 
   if (inputs.length == 0) {
@@ -470,6 +476,7 @@ export default async function main(argv) {
 
   await run({
     browser,
+    driver,
     headless,
     filter,
     inputs,

@@ -6,17 +6,76 @@ export interface BrowseOptions {
   browserPath?: string;
   browserArgs?: string[];
   headless?: boolean;
+  driver?: string;
 }
 
-export function browse(options: BrowseOptions): Deno.Process {
-  return Deno.run({
-    cmd: [
-      browserPath(options),
-      ...browserArgs(options),
-    ],
+export async function browse(options: BrowseOptions): Promise<Function> {
+  const cmd = options.driver ? [options.driver] : [
+    browserPath(options),
+    ...browserArgs(options),
+  ];
+
+  const handle = Deno.run({
+    cmd,
     stdout: "null",
     stderr: "null",
   });
+
+  let sessionId = "";
+  // https://www.w3.org/TR/webdriver/#new-session
+  if (options.driver) {
+    const response = await fetch("http://localhost:4444/session", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        capabilities: {
+          alwaysMatch: {
+            // Tell Chrome's webdriver to follow W3C spec
+            "goog:chromeOptions": {
+              w3c: true,
+            },
+          },
+        },
+      }),
+    });
+
+    const { value } = await response.json();
+    if (!value) {
+      throw new TypeError("WebDriver session could not start");
+    }
+    sessionId = value.sessionId;
+    // https://www.w3.org/TR/webdriver/#navigate-to
+    if (options.url) {
+      // Don't await!
+      fetch(`http://localhost:4444/session/${sessionId}/url`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          url: options.url,
+        }),
+      });
+    }
+  }
+
+  return async () => {
+    // TODO(littledivy): Should we close the session too?
+    if (options.driver) {
+      setTimeout(() => handle.close(), 100);
+      // https://www.w3.org/TR/webdriver/#close-window
+      // Don't await. This blocks forever (on geckodriver).
+      fetch(`http://localhost:4444/session/${sessionId}/window`, {
+        method: "DELETE",
+      }).catch(() => {
+        // Ignore error. Probably caused because driver process exited.
+      });
+    } else {
+      handle.close();
+    }
+  };
 }
 
 function browserPath(options: BrowseOptions): string {
