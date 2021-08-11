@@ -2,12 +2,16 @@ import { assertMatch } from "https://deno.land/std@0.102.0/testing/asserts.ts";
 
 const tests = [
   {
-    input: ["testdata/test/pass.ts"],
-    output: "testdata/test/pass.out",
+    input: ["tools/testdata/test/pass.ts"],
+    output: "tools/testdata/test/pass.out",
   },
   {
-    input: ["testdata/test/ignore.ts"],
-    output: "testdata/test/ignore.out",
+    input: ["tools/testdata/test/ignore.ts"],
+    output: "tools/testdata/test/ignore.out",
+  },
+  {
+    input: ["tools/testdata/test/dom.ts"],
+    output: "tools/testdata/test/dom.out",
   },
 ];
 
@@ -22,14 +26,14 @@ for (const { input, output } of tests) {
         "run",
         "--allow-all",
         "--unstable",
-        "test.js",
+        "tools/test.js",
         "--headless",
         "--browser",
         "chrome",
         ...input,
       ],
       stdout: "piped",
-      stderr: "null",
+      stderr: "inherit",
     });
 
     const actual = new TextDecoder().decode(await process.output())

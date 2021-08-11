@@ -8,6 +8,19 @@ export interface BrowseOptions {
   headless?: boolean;
 }
 
+export async function open(url: string) {
+  const cmds = {
+    windows: "explorer",
+    darwin: "open",
+    linux: "xdg-open",
+  };
+
+  const process = Deno.run({ cmd: [cmds[Deno.build.os], url] });
+  await process.status();
+
+  process.close();
+}
+
 export function browse(options: BrowseOptions): Deno.Process {
   return Deno.run({
     cmd: [
@@ -79,9 +92,11 @@ function chromeArgs(options: BrowseOptions): string[] {
   if (options.headless) {
     args.push(
       "--headless",
-      "--remote-debugging-port=9292",
+      "--disable-gpu",
     );
   }
+
+  args.push("--remote-debugging-port=9292");
 
   if (options.url) {
     args.push(options.url);
@@ -115,6 +130,8 @@ function firefoxArgs(options: BrowseOptions): string[] {
       "--headless",
     );
   }
+
+  args.push("--remote-debugging-port=9292");
 
   if (options.url) {
     args.push(options.url);

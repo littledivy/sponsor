@@ -24,7 +24,19 @@ You can install sponsor by running the following command:
 deno install --allow-all --unstable https://deno.land/x/sponsor/main.js
 ```
 
-## Usage
+There is also a canary version available, which you can install with this command:
+
+```shell
+deno install --allow-all --unstable https://sponsor.land/main.js
+```
+
+## Tools
+
+### Test
+
+The `test` tool provides a fairly magical test runner which runs tests with deno's test
+runner but swaps out the harness with one that runs the tests in the browser with the help of the web
+inspector protocol.
 
 Run a test suite in headless Chrome:
 
@@ -37,3 +49,7 @@ Run a test suite in headless Firefox:
 ```shell
 sponsor test --headless --browser firefox
 ```
+
+## There's no license?
+
+No, there is not.
